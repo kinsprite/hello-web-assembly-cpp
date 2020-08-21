@@ -15,8 +15,7 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-
-void testCall() 
+void testCall()
 {
     printf("function was called!\n");
 }
