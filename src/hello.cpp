@@ -7,11 +7,15 @@
 #endif
 
 #include "hello.hpp"
+#include "my_global.hpp"
 #include "my_class.hpp"
+
+MyGlobal myGlobal;
 
 int main(int argc, char const *argv[])
 {
-    std::cout << "Hello World!" << std::endl;
+    // std::cout << "Hello World!" << std::endl;
+    printf("Hello World!\n");
     return 0;
 }
 
@@ -32,4 +36,8 @@ int square(int c)
 int multiply(int a, int b) {
     std::unique_ptr<MyClassIF> ptr = std::make_unique<MyClassImpl>();
     return ptr->Multiply(a, b);
+}
+
+int getGlobalValue() {
+    return myGlobal.getValue();
 }

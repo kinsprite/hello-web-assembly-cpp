@@ -112,8 +112,8 @@
     // so this creates a (non-native-wasm) table for us.
 
     var wasmTable = new WebAssembly.Table({
-      'initial': 26,
-      'maximum': 26 + 0,
+      'initial': 27,
+      'maximum': 27 + 0,
       'element': 'anyfunc'
     });
 
@@ -204,6 +204,22 @@
       }
     }
 
+    function warnOnce(text) {
+      if (!warnOnce.shown) warnOnce.shown = {};
+      if (!warnOnce.shown[text]) {
+        warnOnce.shown[text] = 1;
+        err(text);
+      }
+    }
+
+    function _atexit(func, arg) {
+      warnOnce('atexit() called, but EXIT_RUNTIME is not set, so atexits() will not be called. set EXIT_RUNTIME to 1 (see the FAQ)');
+    }
+
+    function ___cxa_atexit(a0, a1) {
+      return _atexit(a0,a1);
+    }
+
     function ___handle_stack_overflow() {
       abort('stack overflow')
     }
@@ -284,6 +300,7 @@
 
     const asmGlobalArg = {};
     const asmLibraryArg = {
+      __cxa_atexit: ___cxa_atexit,
       __handle_stack_overflow: ___handle_stack_overflow,
       abort: _abort,
       emscripten_get_sbrk_ptr: _emscripten_get_sbrk_ptr,
@@ -301,16 +318,35 @@
   global.Cpp = class Cpp {
     constructor() {
       const arg = createAsmArg();
-
       this.importObject = {
         env: arg.asmLibraryArg,
         wasi_snapshot_preview1: arg.asmLibraryArg,
       };
     }
-  }
+  };
 
   global.Cpp.createWasm = (url) => {
     const cpp = new global.Cpp();
-    return WebAssembly.instantiateStreaming(fetch(url), cpp.importObject);
-  }
+    return WebAssembly.instantiateStreaming(fetch(url), cpp.importObject).then((asm) => {
+      const asmExports = asm.instance.exports;
+
+      // Init global objects
+      if (asmExports.__wasm_call_ctors) {
+        asmExports.__wasm_call_ctors(null);
+      }
+
+      // Call main
+      if (asmExports.main) {
+        if (asmExports.__set_stack_limit) {
+          const STACK_MAX = 4400;
+          asmExports.__set_stack_limit(STACK_MAX);
+        }
+
+        asmExports.main();
+        // No exit here!
+      }
+
+      return asm;
+    });
+  };
 })();

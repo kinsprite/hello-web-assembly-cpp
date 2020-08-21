@@ -1,3 +1,6 @@
+#ifndef _WASM_MY_CLASS_INCLUDED_
+#define _WASM_MY_CLASS_INCLUDED_
+
 class Base {
 public:
     Base();
@@ -15,3 +18,5 @@ public:
     virtual ~MyClassImpl() override;
     virtual int Multiply(int a, int b) override;
 };
+
+#endif
